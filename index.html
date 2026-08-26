@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZEPHYR — Fly with your body</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪽</text></svg>" />
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <canvas id="game-canvas"></canvas>
+
+  <!-- Webcam preview (motion mode) -->
+  <div id="cam-box" class="hidden">
+    <video id="cam-video" autoplay playsinline muted></video>
+    <div id="cam-status">CAMERA</div>
+  </div>
+
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <div id="hud-topleft">
+      <div id="hud-score">0</div>
+      <div id="hud-combo" class="dim"></div>
+    </div>
+    <div id="hud-bottomleft">
+      <div class="meter-label"><span>SPEED</span><span id="hud-speed-val">0</span></div>
+      <div class="meter"><div id="hud-speed-fill"></div></div>
+      <div class="meter-label"><span>ALTITUDE</span><span id="hud-alt-val">0m</span></div>
+      <div class="meter"><div id="hud-alt-fill"></div></div>
+    </div>
+    <div id="hud-bottomright">
+      <div id="hud-status">KEYBOARD</div>
+      <div id="hud-hints">A/D lean · W/S climb/dive · SPACE flap · P pause · M mute · R new world</div>
+    </div>
+    <div id="msg-feed"></div>
+    <div id="ring-marker" class="hidden"><div id="ring-marker-diamond"></div><div id="ring-marker-dist">0m</div></div>
+    <div id="ring-arrow" class="hidden">➤</div>
+    <div id="warn" class="hidden">⚠ TURN BACK</div>
+  </div>
+
+  <!-- Vignette + damage flash -->
+  <div id="vignette"></div>
+  <div id="flash"></div>
+
+  <!-- Loading -->
+  <div id="overlay-loading" class="overlay">
+    <div class="title-small">ZEPHYR</div>
+    <div class="loader-text" id="loading-text">Shaping the wind…</div>
+  </div>
+
+  <!-- Main menu -->
+  <div id="overlay-menu" class="overlay hidden">
+    <div class="panel">
+      <h1 class="logo">ZEPHYR</h1>
+      <p class="tagline">플라이 — your body is the controller</p>
+      <p class="sub">Soar a living skyworld on motion: lean to bank, raise your arms to climb,<br/>drop them to dive, pump your arms to flap. Or just use the keyboard.</p>
+      <div class="btn-row">
+        <button id="btn-motion" class="btn primary">🎥 Fly with Motion</button>
+        <button id="btn-keyboard" class="btn">⌨️ Fly with Keyboard</button>
+      </div>
+      <div class="controls-grid">
+        <div><b>Lean torso</b><span>bank left/right</span></div>
+        <div><b>Raise arms ↑</b><span>climb</span></div>
+        <div><b>Lower arms ↓</b><span>dive &amp; gain speed</span></div>
+        <div><b>Pump arms</b><span>wing-flap boost</span></div>
+      </div>
+      <p class="credit">fly through golden rings ×100 · perfect center ×1.5 · chain combos ×4 · mind the pillars<br/><span id="seed-line">seed —</span></p>
+    </div>
+  </div>
+
+  <!-- Calibration -->
+  <div id="overlay-calibrate" class="overlay hidden">
+    <div class="panel">
+      <h2>MOTION CALIBRATION</h2>
+      <p class="sub">Step back until your <b>shoulders and hands</b> are fully visible.<br/>Stand level and still — I'll capture your neutral pose.</p>
+      <div id="cal-track" class="track-pill searching">Searching for you…</div>
+      <div id="cal-countdown" class="countdown">3</div>
+      <div class="btn-row">
+        <button id="btn-cal-skip" class="btn small">Skip — fly now</button>
+        <button id="btn-cal-cancel" class="btn small ghost">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pause -->
+  <div id="overlay-pause" class="overlay hidden">
+    <div class="panel">
+      <h2>PAUSED</h2>
+      <div class="btn-row">
+        <button id="btn-resume" class="btn primary">Resume</button>
+        <button id="btn-restart" class="btn">New World (R)</button>
+        <button id="btn-quit" class="btn ghost">Menu</button>
+      </div>
+      <p class="sub" id="pause-stats"></p>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
