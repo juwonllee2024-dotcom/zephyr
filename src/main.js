@@ -16,6 +16,15 @@ import { buildRings, updateRingVisuals, markRingPassed, buildPillars, buildIslan
 import { buildClouds, updateClouds } from './render/clouds.js';
 import { buildVegetation, buildFlocks, updateFlocks } from './render/vegetation.js';
 import { buildOcean, updateOcean, buildMotes, updateMotes, buildMegaIslands } from './render/environment.js';
+import {
+  buildSkyMantas, updateSkyMantas,
+  buildWaterfalls, updateWaterfalls,
+  buildBalloons, updateBalloons,
+  buildCrystals, updateCrystals,
+  buildTemples, updateTemples,
+  buildRainbow,
+} from './render/landmarks.js';
+import { mulberry32 as _mr } from './core/rng.js';
 import { Hud } from './render/hud.js';
 import { PoseTracker } from './input/pose-tracker.js';
 import { PoseVisionPanel } from './input/pose-panel.js';
@@ -69,6 +78,16 @@ class Game {
     this.ocean = buildOcean(this.scene);
     buildMegaIslands(this.scene, seed);
     this.motes = buildMotes(this.scene, seed);
+
+    // landmark layer
+    const lmRand = _mr(seed ^ 0x0dd11e5);
+    this.mantas = buildSkyMantas(this.scene, lmRand);
+    this.waterfalls = buildWaterfalls(this.scene, this.world, lmRand);
+    this.balloons = buildBalloons(this.scene, lmRand);
+    this.crystals = buildCrystals(this.scene, this.world, lmRand);
+    this.temples = buildTemples(this.scene, this.world, lmRand);
+    buildRainbow(this.scene);
+
     this.bird = buildBird(this.scene);
 
     this.flight = createFlightState([this.world.spawn.x, this.world.spawn.y, this.world.spawn.z], this.world.spawn.heading);
@@ -345,7 +364,9 @@ class Game {
     const f = fwdVec(this.flight);
     const speedK = (this.flight.speed - SPEED_LIMITS.min) / (SPEED_LIMITS.max - SPEED_LIMITS.min);
     const back = 13 + speedK * 6;
-    const up = 4.6 + Math.abs(this.flight.roll) * 2.2;
+    // ride lower behind the bird while it climbs so the bird stays framed
+    // instead of sinking off the bottom of a sky-filled view
+    const up = 4.6 + Math.abs(this.flight.roll) * 2.2 - Math.max(0, this.flight.pitch) * 2.6;
 
     const desired = new THREE.Vector3(
       this.flight.pos[0] - f[0] * back,
@@ -357,9 +378,9 @@ class Game {
     this.camera.position.lerp(desired, k);
 
     const look = new THREE.Vector3(
-      this.flight.pos[0] + f[0] * 22,
-      this.flight.pos[1] + f[1] * 22,
-      this.flight.pos[2] + f[2] * 22,
+      this.flight.pos[0] + f[0] * 18,
+      this.flight.pos[1] + f[1] * 18,
+      this.flight.pos[2] + f[2] * 18,
     );
     this.camera.lookAt(look);
     this.camera.rotation.z += this.flight.roll * 0.28; // bank the horizon
@@ -436,6 +457,11 @@ class Game {
     updateFlocks(this.flocks, dt);
     updateOcean(this.ocean, now);
     updateMotes(this.motes, now);
+    updateSkyMantas(this.mantas, now);
+    updateWaterfalls(this.waterfalls, now);
+    updateBalloons(this.balloons, now);
+    updateCrystals(this.crystals, now);
+    updateTemples(this.temples, now);
     this.updateActionBanner(this.currentControls(now));
     this.hud.update(
       this.score.score,

@@ -7,7 +7,8 @@ const RELAX = 0.15;      // how strongly speed relaxes toward trim
 const G_EXCHANGE = 38;   // altitude <-> speed trading power
 const FLAP_ACCEL = 13;   // extra acceleration while flapping
 const MAX_BANK = 1.15;   // rad
-const MAX_PITCH = 1.05;  // rad
+const MAX_PITCH = 0.62;  // rad ≈ 35° — steep enough to soar, shallow enough
+                         // that the world stays framed and speed stays alive
 const ROLL_RATE = 3.0;   // rad/s
 const PITCH_RATE = 2.2;  // rad/s
 const TURN_RATE = 1.35;  // heading change per unit bank
