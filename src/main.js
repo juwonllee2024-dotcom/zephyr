@@ -24,6 +24,17 @@ import {
   buildRealmAmbience, updateRealmAmbience,
 } from './render/realm-landmarks.js';
 import {
+  buildToriiAvenue,
+  buildFrozenLake, buildIcePalaceSpire,
+  buildGrandZiggurat, updateGrandZiggurat,
+  buildAutumnVillage, updateAutumnVillage,
+  buildSunfallMonoliths,
+  buildOasis,
+  buildMushroomRings,
+  buildSpiritPond,
+  buildHubFarms,
+} from './render/realm-structures.js';
+import {
   buildSkyMantas, updateSkyMantas,
   buildWaterfalls, updateWaterfalls,
   buildBalloons, updateBalloons,
@@ -95,10 +106,23 @@ class Game {
     this.crystals = buildCrystals(this.scene, this.world, lmRand);
     this.temples = buildTemples(this.scene, this.world, lmRand);
     buildRainbow(this.scene);
-    this.greatTree = buildGreatTree(this.scene);
+    this.greatTree = buildGreatTree(this.scene, seed);
     buildIceSpires(this.scene, this.world._sampler, seed);
     this.ruins = buildObelisks(this.scene, this.world._sampler, seed);
     this.realmAmbience = buildRealmAmbience(this.scene);
+
+    // signature structures (the realm "cool things")
+    buildToriiAvenue(this.scene, this.world._sampler, seed);
+    buildFrozenLake(this.scene, seed);
+    buildIcePalaceSpire(this.scene, seed);
+    this.ziggurat = buildGrandZiggurat(this.scene, this.world._sampler, seed);
+    this.autumnVillage = buildAutumnVillage(this.scene, this.world._sampler, seed);
+    const monolithData = buildSunfallMonoliths(this.scene, seed);
+    this.monolithColliders = monolithData.towers.map((t) => ({ x: t.x, z: t.z, r: t.r + 2.5, top: t.top }));
+    buildOasis(this.scene, seed);
+    buildMushroomRings(this.scene, this.world._sampler, seed);
+    buildSpiritPond(this.scene);
+    buildHubFarms(this.scene, this.world._sampler, seed);
 
     this.bird = buildBird(this.scene);
 
@@ -478,6 +502,8 @@ class Game {
     updateGreatTree(this.greatTree, now);
     updateObelisks(this.ruins, now);
     updateRealmAmbience(this.realmAmbience, now);
+    updateGrandZiggurat(this.ziggurat, now);
+    updateAutumnVillage(this.autumnVillage, dt * 1.6);
     this.updateActionBanner(this.currentControls(now));
     this.hud.update(
       this.score.score,

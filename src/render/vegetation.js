@@ -142,92 +142,9 @@ export function buildVegetation(scene, sampler, seed) {
   scene.add(rocks);
   scene.add(flowers);
 
-  buildBiomes(scene, sampler, seed);
+  // realm-themed trees are built separately (see render/realm-trees.js)
+
   return { trunks, canopies, rocks, flowers };
-}
-
-// Distinct biome groves: fiery autumn woods and pink sakura glades.
-function buildBiomes(scene, sampler, seed) {
-  const rand = mulberry32(seed ^ 0x51ab73e1);
-  const dummy = new THREE.Object3D();
-  const tint = new THREE.Color();
-
-  const BIOMES = [
-    {
-      name: 'autumn',
-      count: 300,
-      colors: [0xd4552e, 0xe08a2c, 0xc7b23a],
-      // placed AHEAD of the default flight path (bird spawns heading -Z)
-      cx: 380, cz: -680,
-      spread: 430,
-    },
-    {
-      name: 'sakura',
-      count: 280,
-      colors: [0xff9ec7, 0xffb7d5, 0xf27ba8],
-      cx: -620, cz: -800,
-      spread: 420,
-    },
-  ];
-
-  for (const bio of BIOMES) {
-    const trunkGeo = new THREE.CylinderGeometry(0.28, 0.44, 3.0, 6);
-    const canopyGeo = new THREE.IcosahedronGeometry(2.6, 0);
-    const trunkMat = new THREE.MeshLambertMaterial({ color: 0x6d4326, flatShading: true });
-    const leafMats = bio.colors.map(
-      (c) => new THREE.MeshLambertMaterial({ color: c, flatShading: true }),
-    );
-    const trunks = new THREE.InstancedMesh(trunkGeo, trunkMat, bio.count);
-    const canopies = leafMats.map(
-      (m) => new THREE.InstancedMesh(canopyGeo, m, Math.ceil((bio.count * 2) / leafMats.length)),
-    );
-    const counts = [0, 0, 0];
-    for (const c of canopies) {
-      c.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(c.count * 3).fill(1), 3);
-    }
-
-    let placed = 0;
-    let guard = 0;
-    const cx = bio.cx;
-    const cz = bio.cz;
-    while (placed < bio.count && guard < bio.count * 12) {
-      guard++;
-      const x = cx + (rand() * 2 - 1) * bio.spread;
-      const z = cz + (rand() * 2 - 1) * bio.spread;
-      const h = sampler(x, z);
-      if (h < 7 || h > 130) continue;
-      const s = 0.9 + rand() * 1.3;
-      dummy.position.set(x, h + 1.3 * s, z);
-      dummy.scale.setScalar(s);
-      dummy.rotation.y = rand() * Math.PI * 2;
-      dummy.updateMatrix();
-      trunks.setMatrixAt(placed, dummy.matrix);
-
-      const ci = placed % 3;
-      for (let b = 0; b < 2; b++) {
-        dummy.position.set(x + (rand() - 0.5) * s, h + (3.2 + b * 1.4) * s, z + (rand() - 0.5) * s);
-        dummy.scale.setScalar(s * (b === 0 ? 1 : 0.7));
-        dummy.rotation.set(rand(), rand(), rand());
-        dummy.updateMatrix();
-        const slot = counts[ci];
-        if (slot < canopies[ci].count) {
-          canopies[ci].setMatrixAt(slot, dummy.matrix);
-          const base = new THREE.Color(leafMats[ci].color).getHSL({ h: 0, s: 0, l: 0 });
-          tint.setHSL(base.h + (rand() - 0.5) * 0.04, base.s, base.l + (rand() - 0.5) * 0.18);
-          canopies[ci].setColorAt(slot, tint);
-          counts[ci]++;
-        }
-      }
-      placed++;
-    }
-    trunks.count = placed;
-    scene.add(trunks);
-    for (const c of canopies) {
-      c.count = Math.min(c.count, counts[leafMats.indexOf(c.material)] ?? c.count);
-      if (c.instanceColor) c.instanceColor.needsUpdate = true;
-      scene.add(c);
-    }
-  }
 }
 
 function makeFlowerTexture() {

@@ -1,6 +1,7 @@
-// Procedural world generation: terrain sampler, floating islands, ring chains,
-// rock pillars and clouds. Fully deterministic per seed.
+// Procedural world generation: terrain sampler (with Six-Realms sculpting),
+// floating islands, ring chains, rock pillars and clouds.
 import { mulberry32 } from './rng.js';
+import { regionInfluences } from './world-themes.js';
 
 export const WORLD_SIZE = 4000;
 const HALF = WORLD_SIZE / 2;
@@ -48,15 +49,87 @@ function fbm(x, z, seed, octaves = 4) {
   return sum / norm;
 }
 
-// Terrain elevation at world position. Rolling hills in the middle,
-// mountain rim rising toward the world edge. Water sits at y = 0.
+// Terrain elevation at world position, shaped per realm:
+//   frost   — jagged razor peaks (ridged noise) rising from a high plateau
+//   ruins   — stepped ziggurat terraces (quantized heights)
+//   sakura  — sunken turquoise lagoon at its heart
+//   autumn  — amplified cozy hills
+//   sunfall — flattened steppes with bold flat-top mesas
+//   verdant — gentle bowl cradling the Great Tree
 export function terrainHeight(x, z, seed) {
   const base = fbm(x * 0.004, z * 0.004, seed) * 90 - 30;
   const detail = fbm(x * 0.02, z * 0.02, seed + 999) * 12;
   const d = Math.hypot(x, z);
   const edge = smooth(clamp((d - HALF * 0.55) / (HALF * 0.45), 0, 1));
   const mountains = edge * (140 + fbm(x * 0.002, z * 0.002, seed + 55) * 260);
-  return base + detail + mountains;
+  let h = base + detail + mountains;
+
+  // ---- realm shaping (EXAGGERATED — realms must shout, not whisper) ----
+  const infl = regionInfluences(x, z).weights;
+
+  // Frostveil: towering frozen plateau + razor ridges (up to ~+230)
+  const fw = infl.frost ?? 0;
+  if (fw > 0) {
+    const r1 = 1 - Math.abs(fbm(x * 0.006, z * 0.006, seed + 71) * 2 - 1);
+    const r2 = 1 - Math.abs(fbm(x * 0.017, z * 0.017, seed + 131) * 2 - 1);
+    const ridge = Math.pow(r1, 1.6); // sharpen crests
+    h = h * (1 - fw * 0.8) + fw * (52 + ridge * 175 + r2 * 34);
+  }
+
+  // Skyfolk ruins: massive ziggurat terraces (26-unit steps)
+  const rw = infl.ruins ?? 0;
+  if (rw > 0.2) {
+    const step = 26;
+    const q = Math.floor(h / step) * step + 7;
+    h = h * (1 - rw * 0.85) + q * (rw * 0.85);
+  }
+
+  // Sakura: deep lagoon crater at the basin heart
+  const sw = infl.sakura ?? 0;
+  if (sw > 0) {
+    const dl = Math.hypot(x - 60, z - (-1180));
+    const bowl = Math.max(0, 1 - dl / 340);
+    h -= bowl * bowl * 78 * sw;
+    h += sw * 9;
+  }
+
+  // Autumn: big cozy rolling hills
+  const aw = infl.autumn ?? 0;
+  if (aw > 0) {
+    h += Math.sin(x * 0.008 + 1.3) * Math.cos(z * 0.0071) * 30 * aw;
+  }
+
+  // Sunfall: pancake steppes + heroic mesas (+120 flat tops)
+  const pw = infl.sunfall ?? 0;
+  if (pw > 0) {
+    const flat = 22 + fbm(x * 0.003, z * 0.003, seed + 301) * 12;
+    h = h * (1 - pw * 0.72) + flat * (pw * 0.72);
+    const mesas = [
+      [-1520, 180, 190, 120],
+      [-1060, 540, 140, 84],
+      [-1600, 700, 115, 66],
+    ];
+    for (const [mx, mz, mr, mh] of mesas) {
+      const dm = Math.hypot(x - mx, z - mz);
+      if (dm < mr * 1.4) {
+        const t = clamp(1 - dm / (mr * 1.4), 0, 1);
+        const plateau = Math.min(1, t * 2.6);
+        h = Math.max(h, h * (1 - pw) + pw * (flat + mh * plateau + 10));
+      }
+    }
+  }
+
+  // Verdant: dramatic bowl cradling the Great Tree
+  const vw = infl.verdant ?? 0;
+  if (vw > 0) {
+    const dv = Math.hypot(x - (-180), z - 1230);
+    const bowl = Math.max(0, 1 - dv / 480);
+    h = h * (1 - vw * 0.62 * bowl) + vw * (34 + fbm(x * 0.01, z * 0.01, seed + 401) * 10) * bowl;
+    const knoll = Math.max(0, 1 - dv / 170);
+    h += knoll * knoll * 44 * vw;
+  }
+
+  return h;
 }
 
 export function makeTerrainSampler(world) {

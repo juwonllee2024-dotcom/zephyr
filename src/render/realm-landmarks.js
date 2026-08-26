@@ -24,9 +24,10 @@ function getDot() {
   return (DOT ??= softDot());
 }
 
-// ---------- The Verdant Heart: a colossal life-tree ----------
-export function buildGreatTree(scene) {
+// ---------- The Verdant Heart: a colossal life-tree (3× titan scale) ----------
+export function buildGreatTree(scene, seed) {
   const g = new THREE.Group();
+  g.scale.setScalar(3); // titan — visible from every realm
   const trunkMat = new THREE.MeshLambertMaterial({ color: 0x6d4a30, flatShading: true });
   const leafMat = new THREE.MeshLambertMaterial({ color: 0x8fe07a, flatShading: true });
   const glowMat = new THREE.MeshBasicMaterial({ color: 0xd6ffb0, transparent: true, opacity: 0.5 });
@@ -73,9 +74,9 @@ export function buildGreatTree(scene) {
   }
 
   const region = REGIONS.find((r) => r.id === 'verdant');
-  g.position.set(region.x, 60, region.z);
+  g.position.set(region.x, 22, region.z);
   scene.add(g);
-  return { group: g, baseY: 60 };
+  return { group: g, baseY: 22 };
 }
 
 export function updateGreatTree(tree, t) {

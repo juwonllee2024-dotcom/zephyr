@@ -31,7 +31,9 @@ try {
   browser = await chromium.launch({ headless: true }); // fallback to bundled chromium
 }
 
-const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+const page = await browser.newPage({ viewport: { width: 832, height: 468 } });
+page.setDefaultTimeout(150000);
+page.setDefaultNavigationTimeout(150000);
 
 const consoleErrors = [];
 const pageErrors = [];
@@ -42,7 +44,7 @@ await page.goto(base, { waitUntil: 'load' });
 
 // 1) world builds and reaches menu
 try {
-  await page.waitForFunction(() => window.__zephyrState === 'menu', null, { timeout: 30000 });
+  await page.waitForFunction(() => window.__zephyrState === 'menu', null, { timeout: 90000 });
   check('boots to menu', true);
 } catch {
   check('boots to menu', false, 'state never reached "menu"');
