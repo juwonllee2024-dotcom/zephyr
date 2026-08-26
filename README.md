@@ -4,8 +4,10 @@
 
 Stand in front of your webcam, spread your wings, and fly. Lean to bank, raise your arms
 to climb, drop them to dive, pump your arms to flap — or just use the keyboard.
-Soar a procedurally generated skyworld of islands, ring chains, rock-pillar slaloms,
-and drifting clouds through golden-hour light.
+Soar a lush Palworld-style skyworld — vivid meadows, 1600 instanced trees, wildflower
+fields, turquoise lagoons, floating islands, ring chains and circling bird flocks —
+while a live **pose-vision panel** shows exactly how your body maps to flight:
+skeleton overlay, lean horizon, BANK/CLIMB/FLAP gauges, tracking FPS.
 
 ![flight](docs/screenshots/02-flight.png)
 
@@ -36,6 +38,10 @@ npm run preview    # serves the production build on :4173
 | — | `P` / `Esc` | Pause |
 | — | `M` | Mute |
 | — | `R` | Generate a new world |
+
+The **vision panel** (top-right during motion flight) renders the mirrored feed with a
+gradient pose skeleton, highlighted shoulder/wrist joints, a rotating lean-horizon,
+three live control meters, and tracker FPS — so you always see how your body drives the bird.
 
 ## Gameplay
 

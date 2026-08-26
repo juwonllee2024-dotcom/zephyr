@@ -1,4 +1,6 @@
 // Scene assembly: renderer, sky dome, lighting, fog, water, sun.
+// V2 "Palworld" grade: high-chroma cyan-to-azure sky, saturated golden sun,
+// turquoise tropical water.
 import * as THREE from 'three';
 
 export function createRenderer(canvas) {
@@ -24,20 +26,19 @@ const SKY_FRAG = `
   uniform vec3 horizon;
   void main() {
     float h = clamp(vDir.y, -1.0, 1.0);
-    vec3 col = mix(horizon, mid, smoothstep(0.0, 0.28, h));
-    col = mix(col, zenith, smoothstep(0.25, 0.85, h));
-    // warm bloom around the sun azimuth (sun sits toward -Z,+X low on the sky)
-    vec3 sunDir = normalize(vec3(0.55, 0.28, -0.79));
-    float sunAmt = pow(max(dot(normalize(vDir), sunDir), 0.0), 6.0);
-    col += vec3(1.0, 0.62, 0.30) * sunAmt * 0.55;
+    vec3 col = mix(horizon, mid, smoothstep(0.02, 0.30, h));
+    col = mix(col, zenith, smoothstep(0.28, 0.9, h));
+    // big friendly sun glow toward -Z,+X
+    vec3 sunDir = normalize(vec3(0.5, 0.42, -0.76));
+    float sunAmt = pow(max(dot(normalize(vDir), sunDir), 0.0), 5.0);
+    col += vec3(1.0, 0.85, 0.45) * sunAmt * 0.6;
     gl_FragColor = vec4(col, 1.0);
   }
 `;
 
 export function buildScene(scene) {
-  scene.fog = new THREE.Fog(0xf2c391, 340, 2400);
+  scene.fog = new THREE.Fog(0xbfe8f7, 420, 2600);
 
-  // Sky dome
   const skyGeo = new THREE.SphereGeometry(6000, 28, 16);
   const skyMat = new THREE.ShaderMaterial({
     vertexShader: SKY_VERT,
@@ -45,43 +46,42 @@ export function buildScene(scene) {
     side: THREE.BackSide,
     depthWrite: false,
     uniforms: {
-      zenith: { value: new THREE.Color(0x2c4a7c) },
-      mid: { value: new THREE.Color(0x8fb6dd) },
-      horizon: { value: new THREE.Color(0xffd9a3) },
+      zenith: { value: new THREE.Color(0x1f7ad4)},   // deep azure overhead
+      mid: { value: new THREE.Color(0x59b7e8) },     // classic bright blue
+      horizon: { value: new THREE.Color(0xcdf3ff) }, // pale tropical haze
     },
   });
   const sky = new THREE.Mesh(skyGeo, skyMat);
   scene.add(sky);
 
-  // Lights — golden hour
-  const hemi = new THREE.HemisphereLight(0xbdd7ff, 0x6e5a3f, 0.85);
+  const hemi = new THREE.HemisphereLight(0xcfe8ff, 0x7fae62, 1.15);
   scene.add(hemi);
 
-  const sunDir = new THREE.Vector3(0.55, 0.28, -0.79).normalize();
-  const sun = new THREE.DirectionalLight(0xffdfb0, 1.35);
+  const sunDir = new THREE.Vector3(0.5, 0.42, -0.76).normalize();
+  const sun = new THREE.DirectionalLight(0xfff1cf, 1.85);
   sun.position.copy(sunDir).multiplyScalar(1000);
   scene.add(sun);
 
-  // Sun disc billboard
-  const sunSprite = new THREE.Sprite(makeGlowMaterial('#fff3d0', 0.9));
+  const sunSprite = new THREE.Sprite(makeGlowMaterial('#fff8dd', 0.95));
   sunSprite.position.copy(sunDir).multiplyScalar(5200);
-  sunSprite.scale.set(900, 900, 1);
+  sunSprite.scale.set(1000, 1000, 1);
   scene.add(sunSprite);
 
-  // Ocean plane
+  // Turquoise tropical water with animated shimmer stripes
   const waterMat = new THREE.MeshPhongMaterial({
-    color: 0x1d5c86,
+    color: 0x21c3d6,
     transparent: true,
-    opacity: 0.88,
-    shininess: 90,
-    specular: 0x88bbff,
+    opacity: 0.86,
+    shininess: 120,
+    specular: 0xd8ffff,
   });
   const water = new THREE.Mesh(new THREE.PlaneGeometry(9000, 9000), waterMat);
   water.rotation.x = -Math.PI / 2;
   water.position.y = 0;
+  water.userData.baseColor = new THREE.Color(0x21c3d6);
   scene.add(water);
 
-  return { sky, sun };
+  return { sky, sun, water };
 }
 
 // Soft radial glow texture shared by sprites (sun, ring halos, clouds).

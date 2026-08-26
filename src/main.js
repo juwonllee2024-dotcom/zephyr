@@ -11,11 +11,13 @@ import { mulberry32 } from './core/rng.js';
 
 import { createRenderer, buildScene } from './render/scene-builder.js';
 import { buildTerrain } from './render/terrain.js';
-import { buildBird, animateBird } from './render/bird.js';
+import { buildBird, animateBird, pushTrail, resetTrail } from './render/bird.js';
 import { buildRings, updateRingVisuals, markRingPassed, buildPillars, buildIslands } from './render/rings.js';
 import { buildClouds, updateClouds } from './render/clouds.js';
+import { buildVegetation, buildFlocks, updateFlocks } from './render/vegetation.js';
 import { Hud } from './render/hud.js';
 import { PoseTracker } from './input/pose-tracker.js';
+import { PoseVisionPanel } from './input/pose-panel.js';
 import { KeyboardControls } from './input/keyboard-fallback.js';
 import { SoundEngine } from './audio/sound-engine.js';
 
@@ -61,6 +63,8 @@ class Game {
     buildPillars(this.scene, this.world);
     buildIslands(this.scene, this.world, mulberry32(seed ^ 0x5f3759df));
     this.clouds = buildClouds(this.scene, this.world);
+    buildVegetation(this.scene, this.world._sampler, seed);
+    this.flocks = buildFlocks(this.scene, this.world, mulberry32(seed ^ 0x68e31da4));
     this.bird = buildBird(this.scene);
 
     this.flight = createFlightState([this.world.spawn.x, this.world.spawn.y, this.world.spawn.z], this.world.spawn.heading);
@@ -95,6 +99,11 @@ class Game {
       }
       hide('overlay-loading');
       hide('overlay-menu');
+      if (!this.posePanel) {
+        this.posePanel = new PoseVisionPanel($('cam-video'));
+        window.addEventListener('resize', () => this.posePanel.resize());
+      }
+      this.posePanel.resize();
       await this.poseTracker.start($('cam-video'));
       this.beginCalibration();
     } catch (err) {
@@ -205,6 +214,7 @@ class Game {
     const out = this.motionMapper.update(lms, t);
     out.t = t;
     this.lastMotion = out;
+    if (this.posePanel) this.posePanel.draw(lms, out, out.tracked);
     if (this.fsm.state === 'calibrating') {
       this._calSamples = this._calSamples ?? [];
       if (this._calSamples.length < 40) this._calSamples.push({ roll: out.roll, pitch: out.pitch });
@@ -214,6 +224,9 @@ class Game {
   onPoseStatus(s) {
     const map = { ok: 'TRACKED', searching: 'SEARCHING', lost: 'NOBODY', error: 'CAMERA ERROR', init: 'LOADING MODEL' };
     $('cam-status').textContent = map[s] ?? s.toUpperCase();
+    if ((s === 'ok' || s === 'searching') && this.posePanel) {
+      requestAnimationFrame(() => this.posePanel.resize());
+    }
   }
 
   currentControls(tSec) {
@@ -378,8 +391,25 @@ class Game {
     }
     this.updateCamera(dt);
     animateBird(this.bird, this.flight, this.currentControls(now).flap, now, this.flight.roll);
+
+    // wingtip trails (reset when we teleport / respawn)
+    if (!this._trailRef) this._trailRef = this.bird.group.position.clone();
+    const tipR = new THREE.Vector3();
+    const tipL = new THREE.Vector3();
+    this.bird.tipR.getWorldPosition(tipR);
+    this.bird.tipL.getWorldPosition(tipL);
+    if (this._trailRef.distanceToSquared(this.bird.group.position) > 900) {
+      resetTrail(this.bird.trailR, tipR);
+      resetTrail(this.bird.trailL, tipL);
+      this._trailRef.copy(this.bird.group.position);
+    } else {
+      pushTrail(this.bird.trailR, tipR);
+      pushTrail(this.bird.trailL, tipL);
+    }
+
     updateRingVisuals(this.ringObjects, now, this.camera);
     updateClouds(this.clouds, this.camera);
+    updateFlocks(this.flocks, dt);
     this.hud.update(
       this.score.score,
       this.score.combo,

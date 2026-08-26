@@ -70,8 +70,8 @@ export function markRingPassed(ro, tNow) {
 
 export function buildPillars(scene, world) {
   const group = new THREE.Group();
-  const rockMat = new THREE.MeshLambertMaterial({ color: 0x6e6157, flatShading: true });
-  const capMat = new THREE.MeshLambertMaterial({ color: 0x4f7042, flatShading: true });
+  const rockMat = new THREE.MeshLambertMaterial({ color: 0xb3a184, flatShading: true });
+  const capMat = new THREE.MeshLambertMaterial({ color: 0x4f9e46, flatShading: true });
 
   for (const p of world.pillars) {
     const h = p.h ?? p.top;
