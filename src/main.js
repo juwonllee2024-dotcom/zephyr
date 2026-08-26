@@ -383,7 +383,8 @@ class Game {
       this.flight.pos[2] + f[2] * 18,
     );
     this.camera.lookAt(look);
-    this.camera.rotation.z += this.flight.roll * 0.28; // bank the horizon
+    // tilt the horizon WITH the turn (negated roll, matching the bird's body)
+    this.camera.rotation.z -= this.flight.roll * 0.28;
 
     const fov = 64 + speedK * 12;
     if (Math.abs(this.camera.fov - fov) > 0.2) {

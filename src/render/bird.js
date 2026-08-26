@@ -225,7 +225,11 @@ export function buildBird(scene) {
 
 export function animateBird(bird, flight, flapPower, tSec) {
   bird.group.position.set(flight.pos[0], flight.pos[1], flight.pos[2]);
-  bird.group.rotation.set(flight.pitch, flight.heading, flight.roll);
+  // Aircraft convention: yaw → pitch → roll. Roll sign is NEGATED because a
+  // right turn (positive roll in our physics) must dip the RIGHT wing —
+  // rotating +Z lifts +X (right wing UP), which is a left bank.
+  bird.group.rotation.order = 'YXZ';
+  bird.group.rotation.set(flight.pitch, flight.heading, -flight.roll);
 
   const gliding = flapPower < 0.02;
   const f = 3.2 + flapPower * 13;
