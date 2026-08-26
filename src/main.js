@@ -16,6 +16,13 @@ import { buildRings, updateRingVisuals, markRingPassed, buildPillars, buildIslan
 import { buildClouds, updateClouds } from './render/clouds.js';
 import { buildVegetation, buildFlocks, updateFlocks } from './render/vegetation.js';
 import { buildOcean, updateOcean, buildMotes, updateMotes, buildMegaIslands } from './render/environment.js';
+import { buildRealmTrees } from './render/realm-trees.js';
+import {
+  buildGreatTree, updateGreatTree,
+  buildIceSpires,
+  buildObelisks, updateObelisks,
+  buildRealmAmbience, updateRealmAmbience,
+} from './render/realm-landmarks.js';
 import {
   buildSkyMantas, updateSkyMantas,
   buildWaterfalls, updateWaterfalls,
@@ -75,11 +82,12 @@ class Game {
     this.clouds = buildClouds(this.scene, this.world);
     buildVegetation(this.scene, this.world._sampler, seed);
     this.flocks = buildFlocks(this.scene, this.world, mulberry32(seed ^ 0x68e31da4));
+    buildRealmTrees(this.scene, this.world._sampler, seed);
     this.ocean = buildOcean(this.scene);
     buildMegaIslands(this.scene, seed);
     this.motes = buildMotes(this.scene, seed);
 
-    // landmark layer
+    // Six Realms landmarks + ambience
     const lmRand = _mr(seed ^ 0x0dd11e5);
     this.mantas = buildSkyMantas(this.scene, lmRand);
     this.waterfalls = buildWaterfalls(this.scene, this.world, lmRand);
@@ -87,6 +95,10 @@ class Game {
     this.crystals = buildCrystals(this.scene, this.world, lmRand);
     this.temples = buildTemples(this.scene, this.world, lmRand);
     buildRainbow(this.scene);
+    this.greatTree = buildGreatTree(this.scene);
+    buildIceSpires(this.scene, this.world._sampler, seed);
+    this.ruins = buildObelisks(this.scene, this.world._sampler, seed);
+    this.realmAmbience = buildRealmAmbience(this.scene);
 
     this.bird = buildBird(this.scene);
 
@@ -463,6 +475,9 @@ class Game {
     updateBalloons(this.balloons, now);
     updateCrystals(this.crystals, now);
     updateTemples(this.temples, now);
+    updateGreatTree(this.greatTree, now);
+    updateObelisks(this.ruins, now);
+    updateRealmAmbience(this.realmAmbience, now);
     this.updateActionBanner(this.currentControls(now));
     this.hud.update(
       this.score.score,
