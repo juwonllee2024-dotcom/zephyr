@@ -74,15 +74,13 @@ export function createMotionMapper(opts = {}) {
 
     // ---- Anatomical posture measures (image y is DOWN):
     //   upM  > 0  → wrists ABOVE the shoulder line (how far)
-    //   dnM  > 0  → wrists BELOW the hip line (how far)
-    // Arms hanging at your sides = mid/neutral by construction — standing
-    // still must never read as "dive".
-    const LS2 = 23, RS2 = 24;
+    //   Dive pose = hands CLOSE TOGETHER in front, below shoulders
+    //   (upper-body only — no hip reference; hanging arms stay wide apart).
     const shoulderMidY = (lms[LS].y + lms[RS].y) / 2;
     const wristMidY = (lms[LW].y + lms[RW].y) / 2;
-    const hipMidY = ((lms[LS2]?.y ?? 0.65) + (lms[RS2]?.y ?? 0.65)) / 2;
     const upM = (shoulderMidY - wristMidY) / sw;
-    const dnM = (wristMidY - hipMidY) / sw;
+    const gapX = Math.abs(lms[LW].x - lms[RW].x);
+    const together = gapX < sw * 0.65;
 
     // Upward wrist velocity → wing-flap impulse (image y is down, so up = negative dy).
     let velUp = 0;
@@ -92,11 +90,13 @@ export function createMotionMapper(opts = {}) {
     lastWristMidY = wristMidY;
 
     // ---- Posture zones with dwell: commands need a HELD position, so a shake
-    // sweeping through the up-zone never reads as "climb", and a fast raise
-    // never gets mistaken for flapping-away-the-altitude-control.
+    // sweeping through any zone never commands, and a fast raise never gets
+    // mistaken for flapping-away-the-altitude-control.
+    //   up   : wrists above shoulders          (climb, short hold)
+    //   down : wrists together + below chest  (dive, LONG hold per user spec)
     const zoneNow =
       upM > 0.45 ? 'up'
-      : (upM < 0 && dnM > 0.2) ? 'down'
+      : (upM < -0.25 && together) ? 'down'
       : 'mid';
     if (zoneNow !== zoneName) {
       zoneName = zoneNow;
@@ -126,19 +126,23 @@ export function createMotionMapper(opts = {}) {
     smRoll = smRoll === null ? rollRaw : ema(smRoll, rollRaw);
 
     // ---- Pitch: HELD postures command; everything else is level flight.
-    // No partial-raise trim: any leak here lets shake stroke-bottoms read as
-    // DIVE. Clean model: hands held HIGH = climb, held LOW (below hips) =
-    // dive, otherwise 0. HOLD must exceed any in-zone time a shake produces.
-    const HOLD = 0.4;
+    // Clean model: hands held HIGH = climb (quick), hands held TOGETHER LOW =
+    // dive (long 2s hold so flapping can never trigger it — user-requested).
+    const HOLD_UP = 0.4;
+    const HOLD_DOWN = 2.0;
     let pTarget = 0;
-    if (zoneNow === 'up' && dwell > HOLD && calm) pTarget = 1;
-    else if (zoneNow === 'down' && dwell > HOLD && calm) pTarget = -1;
+    let diveCharge = 0;
+    if (zoneNow === 'up' && dwell > HOLD_UP && calm) pTarget = 1;
+    else if (zoneNow === 'down') {
+      diveCharge = clamp(dwell / HOLD_DOWN, 0, 1);
+      if (dwell > HOLD_DOWN && calm) pTarget = -1;
+    }
 
     if (smPitch === null) smPitch = pTarget;
     else if (Math.abs(pTarget) > Math.abs(smPitch)) smPitch += (pTarget - smPitch) * alphaRise;
     else smPitch += (pTarget - smPitch) * alphaFall;
 
-    return { roll: smRoll, pitch: smPitch, flap, tracked: true };
+    return { roll: smRoll, pitch: smPitch, flap, tracked: true, zone: zoneNow, diveCharge };
   }
 
   return { update };

@@ -141,11 +141,28 @@ export class PoseVisionPanel {
     };
     const pitch = controls?.pitch ?? 0;
     const flap = controls?.flap ?? 0;
+    // dive charge meter (hands together below chest, 2s hold)
+    const dc = controls?.diveCharge ?? 0;
+    if (dc > 0.01) {
+      const bw = W * 0.3;
+      const bh = 5;
+      const bx = 10;
+      const dy = H - 58;
+      ctx.fillStyle = 'rgba(255,255,255,0.18)';
+      ctx.fillRect(bx, dy, bw, bh);
+      ctx.fillStyle = dc >= 1 ? '#ff5c3d' : '#ff9f45';
+      ctx.fillRect(bx, dy, bw * dc, bh);
+      ctx.fillStyle = 'rgba(255,255,255,0.92)';
+      ctx.font = `700 ${Math.max(8, W / 17)}px Segoe UI, sans-serif`;
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(dc >= 1 ? 'DIVE!' : 'DIVE ▸▸▸', bx, dy - 1);
+    }
     bar('LEAN', clamp01(roll), '#ffb347', H - 40);
     bar('CLIMB', clamp01(pitch), '#59d2ff', H - 22);
     bar('FLAP', clamp01(flap), '#7dffa8', H - 4);
 
-    const commanding = Math.abs(roll) > 0.14 || Math.abs(pitch) > 0.14 || flap > 0.18;
+    const commanding =
+      Math.abs(roll) > 0.14 || Math.abs(pitch) > 0.14 || flap > 0.18 || dc > 0.05;
     ctx.font = `800 ${Math.max(9, W / 14)}px Segoe UI, sans-serif`;
     ctx.textBaseline = 'bottom';
     const stWord = commanding ? 'COMMAND' : 'REST';
