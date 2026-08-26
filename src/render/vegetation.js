@@ -6,6 +6,10 @@ import { WORLD_SIZE } from '../core/world-gen.js';
 
 const HALF = WORLD_SIZE / 2;
 
+function clamp01(v) {
+  return v < 0 ? 0 : v > 1 ? 1 : v;
+}
+
 export function buildVegetation(scene, sampler, seed) {
   const rand = mulberry32(seed ^ 0x9e3779b9);
   const dummy = new THREE.Object3D();
@@ -23,6 +27,9 @@ export function buildVegetation(scene, sampler, seed) {
   const trunks = new THREE.InstancedMesh(trunkGeo, trunkMat, TREES);
   const canopies = leafMats.map((m) => new THREE.InstancedMesh(canopyGeo, m, Math.ceil((TREES * 2) / leafMats.length)));
   const canopyCount = [0, 0, 0];
+  const leafBase = leafMats.map((m) => new THREE.Color(m.color).getHSL({ h: 0, s: 0, l: 0 }));
+  const tint = new THREE.Color();
+  for (const c of canopies) c.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(c.count * 3).fill(1), 3);
 
   // ---------- boulders ----------
   const ROCKS = 380;
@@ -84,7 +91,8 @@ export function buildVegetation(scene, sampler, seed) {
     dummy.updateMatrix();
     trunks.setMatrixAt(placedTrees, dummy.matrix);
 
-    // two stacked canopy blobs
+    // two stacked canopy blobs, each with its own tint jitter so forests
+    // don't read as copy-paste rows
     const ci = placedTrees % leafMats.length;
     for (let b = 0; b < 2; b++) {
       dummy.position.set(x + (rand() - 0.5) * 1.1 * s, h + (3.4 + b * 1.5) * s, z + (rand() - 0.5) * 1.1 * s);
@@ -94,6 +102,14 @@ export function buildVegetation(scene, sampler, seed) {
       const slot = canopyCount[ci];
       if (slot < canopies[ci].count) {
         canopies[ci].setMatrixAt(slot, dummy.matrix);
+        // hue/lightness jitter around the material's base green
+        const base = leafBase[ci];
+        tint.setHSL(
+          clamp01(base.h + (rand() - 0.5) * 0.05),
+          clamp01(base.s + (rand() - 0.5) * 0.18),
+          clamp01(base.l + (rand() - 0.5) * 0.22),
+        );
+        canopies[ci].setColorAt(slot, tint);
         canopyCount[ci]++;
       }
     }

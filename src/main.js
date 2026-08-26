@@ -15,6 +15,7 @@ import { buildBird, animateBird, pushTrail, resetTrail } from './render/bird.js'
 import { buildRings, updateRingVisuals, markRingPassed, buildPillars, buildIslands } from './render/rings.js';
 import { buildClouds, updateClouds } from './render/clouds.js';
 import { buildVegetation, buildFlocks, updateFlocks } from './render/vegetation.js';
+import { buildOcean, updateOcean, buildMotes, updateMotes, buildMegaIslands } from './render/environment.js';
 import { Hud } from './render/hud.js';
 import { PoseTracker } from './input/pose-tracker.js';
 import { PoseVisionPanel } from './input/pose-panel.js';
@@ -65,6 +66,9 @@ class Game {
     this.clouds = buildClouds(this.scene, this.world);
     buildVegetation(this.scene, this.world._sampler, seed);
     this.flocks = buildFlocks(this.scene, this.world, mulberry32(seed ^ 0x68e31da4));
+    this.ocean = buildOcean(this.scene);
+    buildMegaIslands(this.scene, seed);
+    this.motes = buildMotes(this.scene, seed);
     this.bird = buildBird(this.scene);
 
     this.flight = createFlightState([this.world.spawn.x, this.world.spawn.y, this.world.spawn.z], this.world.spawn.heading);
@@ -367,6 +371,26 @@ class Game {
     }
   }
 
+  // Big on-screen label of the command your body (or keys) is sending right
+  // now — so "doing" vs "not doing" is impossible to miss.
+  updateActionBanner(controls) {
+    const el = $('action-banner');
+    if (!el) return;
+    let label = null;
+    let cls = null;
+    if (controls.flap > 0.35) { label = '✦ FLAP ✦'; cls = 'flap'; }
+    else if (controls.targetRoll < -0.28) { label = '◀ LEFT'; cls = 'left'; }
+    else if (controls.targetRoll > 0.28) { label = 'RIGHT ▶'; cls = 'right'; }
+    else if (controls.targetPitch > 0.35) { label = '▲ CLIMB'; cls = 'up'; }
+    else if (controls.targetPitch < -0.35) { label = '▼ DIVE'; cls = 'down'; }
+    if (label && this.fsm.state === 'flying') {
+      el.textContent = label;
+      el.className = cls;
+    } else {
+      el.className = 'hidden';
+    }
+  }
+
   nearestOpenRing(maxDist = 700) {
     let best = null;
     let bestD = maxDist;
@@ -410,6 +434,9 @@ class Game {
     updateRingVisuals(this.ringObjects, now, this.camera);
     updateClouds(this.clouds, this.camera);
     updateFlocks(this.flocks, dt);
+    updateOcean(this.ocean, now);
+    updateMotes(this.motes, now);
+    this.updateActionBanner(this.currentControls(now));
     this.hud.update(
       this.score.score,
       this.score.combo,

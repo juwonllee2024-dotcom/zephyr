@@ -123,6 +123,21 @@ html, body {
   position: absolute; top: 17%; left: 50%; transform: translateX(-50%);
   display: flex; flex-direction: column; align-items: center; gap: 6px;
 }
+
+/* big always-on action banner — shows the command your body/keys are sending */
+#action-banner {
+  position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%) rotate(-2deg);
+  font-size: 56px; font-weight: 900; letter-spacing: 0.06em;
+  text-shadow: 0 4px 28px rgba(0, 0, 0, 0.65), 0 0 42px rgba(255, 179, 71, 0.4);
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+#action-banner.left  { color: #59d2ff; }
+#action-banner.right { color: #ffb347; }
+#action-banner.up    { color: #7dffa8; }
+#action-banner.down  { color: #ff8a5c; }
+#action-banner.flap  { color: #ffe066; animation: flappulse 0.32s infinite alternate; }
+@keyframes flappulse { from { transform: translate(-50%, -50%) scale(1); } to { transform: translate(-50%, -50%) scale(1.09); } }
 .msg {
   font-size: 26px; font-weight: 800; letter-spacing: 0.04em;
   text-shadow: 0 3px 20px rgba(0, 0, 0, 0.7);

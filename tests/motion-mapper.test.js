@@ -103,11 +103,19 @@ describe('motion mapper', () => {
     m.update(pose({}), 0.0);
     const outs = [];
     let t = 0.05;
+    // ±0.01 in image space ≈ real sensor noise after sw-normalization
     for (let i = 0; i < 90; i++) {
-      outs.push(m.update(pose({ shoulderTilt: i % 2 === 0 ? 0.02 : -0.02 }), t).roll);
+      outs.push(m.update(pose({ shoulderTilt: i % 2 === 0 ? 0.01 : -0.01 }), t).roll);
       t += 1 / 60;
     }
     const spread = Math.max(...outs) - Math.min(...outs);
     expect(spread).toBeLessThan(0.5);
+  });
+
+  it('soft deadzone: sub-threshold twitches read as zero', () => {
+    const m = createMotionMapper();
+    m.update(pose({}), 0.0);
+    const out = m.update(pose({ shoulderTilt: 0.004 }), 0.05); // tiny sway
+    expect(Math.abs(out.roll)).toBeLessThan(0.02);
   });
 });

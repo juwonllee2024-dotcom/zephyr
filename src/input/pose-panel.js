@@ -120,14 +120,18 @@ export class PoseVisionPanel {
     ctx.stroke();
     ctx.restore();
 
-    // ---- control bars
+    // ---- control bars (with shaded deadzone band + state word)
     const bar = (label, v, color, y) => {
       const bw = W * 0.3;
       const bh = 5;
       const bx = 10;
+      const half = bw / 2;
+      const dz = 0.1;
       ctx.fillStyle = 'rgba(255,255,255,0.18)';
       ctx.fillRect(bx, y, bw, bh);
-      const half = bw / 2;
+      // deadzone band — output here is intentionally zero ("rest")
+      ctx.fillStyle = 'rgba(255,255,255,0.30)';
+      ctx.fillRect(bx + half - dz * half, y, dz * 2 * half, bh);
       ctx.fillStyle = color;
       ctx.fillRect(v >= 0 ? bx + half : bx + half + v * half, y, Math.abs(v) * half, bh);
       ctx.fillStyle = 'rgba(255,255,255,0.92)';
@@ -139,8 +143,15 @@ export class PoseVisionPanel {
     const flap = controls?.flap ?? 0;
     bar('LEAN', clamp01(roll), '#ffb347', H - 40);
     bar('CLIMB', clamp01(pitch), '#59d2ff', H - 22);
-    // flap as pulsing meter
     bar('FLAP', clamp01(flap), '#7dffa8', H - 4);
+
+    const commanding = Math.abs(roll) > 0.14 || Math.abs(pitch) > 0.14 || flap > 0.18;
+    ctx.font = `800 ${Math.max(9, W / 14)}px Segoe UI, sans-serif`;
+    ctx.textBaseline = 'bottom';
+    const stWord = commanding ? 'COMMAND' : 'REST';
+    const stw = ctx.measureText(stWord).width;
+    ctx.fillStyle = commanding ? '#7dffa8' : 'rgba(234,242,255,0.5)';
+    ctx.fillText(stWord, W - stw - 10, H - 44);
 
     // status chip
     ctx.font = `700 ${Math.max(8, W / 16)}px Segoe UI, sans-serif`;

@@ -7,6 +7,9 @@ export function createRenderer(canvas) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+  // filmic response → rich saturated Palworld-grade color instead of flat washout
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.15;
   return renderer;
 }
 
@@ -67,21 +70,9 @@ export function buildScene(scene) {
   sunSprite.scale.set(1000, 1000, 1);
   scene.add(sunSprite);
 
-  // Turquoise tropical water with animated shimmer stripes
-  const waterMat = new THREE.MeshPhongMaterial({
-    color: 0x21c3d6,
-    transparent: true,
-    opacity: 0.86,
-    shininess: 120,
-    specular: 0xd8ffff,
-  });
-  const water = new THREE.Mesh(new THREE.PlaneGeometry(9000, 9000), waterMat);
-  water.rotation.x = -Math.PI / 2;
-  water.position.y = 0;
-  water.userData.baseColor = new THREE.Color(0x21c3d6);
-  scene.add(water);
+  // NOTE: the ocean surface lives in render/environment.js (animated waves).
 
-  return { sky, sun, water };
+  return { sky, sun };
 }
 
 // Soft radial glow texture shared by sprites (sun, ring halos, clouds).
