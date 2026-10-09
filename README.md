@@ -11,6 +11,8 @@
 
 A browser-based 3D flying-game prototype with webcam-pose and keyboard input paths. The portfolio's recorded start screen does not verify motion tracking on every device.
 
+[Play the public demo](https://zephyr-demo.juwonllee2026.workers.dev/). Keyboard flight, pause/resume, world regeneration and returning to the menu were verified on the public deployment on 2026-10-09. Webcam motion tracking remains unverified; camera access is requested only after choosing motion controls.
+
 [View JUWON's portfolio](https://jupt.pages.dev/) · [Browse the project collection](https://jupt.pages.dev/projects)
 
 **Scope:** This README presents the repository's documented intent and recorded visual evidence. It does not certify that every feature is complete, deployed, or currently working. Follow the original setup, safety, and license documentation below.
@@ -18,6 +20,8 @@ A browser-based 3D flying-game prototype with webcam-pose and keyboard input pat
 ## 한국어
 
 몸 움직임을 입력으로 사용하는 브라우저 3D 비행 게임.
+
+[공개 데모 체험하기](https://zephyr-demo.juwonllee2026.workers.dev/). 2026-10-09 공개 배포에서 키보드 비행·일시정지와 재개·새 월드·메뉴 복귀를 검증했습니다. 웹캠 동작 인식은 미검증이며 모션 조종을 선택할 때만 카메라 권한을 요청합니다.
 
 [JUWON 포트폴리오 보기](https://jupt.pages.dev/) · [전체 프로젝트 보기](https://jupt.pages.dev/projects)
 
